@@ -1,0 +1,596 @@
+{
+	"info": {
+		"_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+		"name": "Subscription Management API",
+		"description": "Production-ready multi-currency subscription management API with trial periods, grace periods, and automated lifecycle processing.\n\n**Base URL:** `/api/v1/`\n**Auth:** Bearer Token (Sanctum) for protected endpoints",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8000",
+			"type": "string",
+			"description": "Your API server URL"
+		},
+		{
+			"key": "bearer_token",
+			"value": "",
+			"type": "string",
+			"description": "Sanctum authentication token"
+		},
+		{
+			"key": "plan_id",
+			"value": "1",
+			"type": "string",
+			"description": "ID of an existing plan"
+		},
+		{
+			"key": "subscription_id",
+			"value": "1",
+			"type": "string",
+			"description": "ID of an existing subscription"
+		}
+	],
+	"item": [
+		{
+			"name": "Plans",
+			"item": [
+				{
+					"name": "List Active Plans (Paginated)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/plans?per_page=10&page=1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "plans"],
+							"query": [
+								{
+									"key": "per_page",
+									"value": "10",
+									"description": "Items per page (default: 10, max: 50)"
+								},
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Page number"
+								}
+							]
+						},
+						"description": "Retrieve a paginated list of all active plans with their pricing configurations. No authentication required."
+					},
+					"response": [
+						{
+							"name": "200 Success",
+							"originalRequest": {
+								"method": "GET",
+								"url": {
+									"raw": "{{base_url}}/api/v1/plans?per_page=10",
+									"host": ["{{base_url}}"],
+									"path": ["api", "v1", "plans"],
+									"query": [{"key": "per_page", "value": "10"}]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"body": "{\n  \"status\": \"success\",\n  \"message\": \"Plans retrieved successfully.\",\n  \"data\": [\n    {\n      \"id\": 1,\n      \"name\": \"Starter\",\n      \"description\": \"Perfect for individuals and small projects.\",\n      \"trial_days\": 14,\n      \"has_trial\": true,\n      \"is_active\": true,\n      \"prices\": [\n        {\n          \"id\": 1,\n          \"currency\": \"usd\",\n          \"billing_cycle\": \"monthly\",\n          \"price\": \"9.99\",\n          \"formatted_price\": \"$9.99\"\n        },\n        {\n          \"id\": 2,\n          \"currency\": \"usd\",\n          \"billing_cycle\": \"yearly\",\n          \"price\": \"99.99\",\n          \"formatted_price\": \"$99.99\"\n        }\n      ],\n      \"created_at\": \"2026-04-04T00:00:00+00:00\",\n      \"updated_at\": \"2026-04-04T00:00:00+00:00\"\n    }\n  ],\n  \"meta\": {\n    \"current_page\": 1,\n    \"last_page\": 1,\n    \"per_page\": 10,\n    \"total\": 3\n  }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Single Plan",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/plans/{{plan_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "plans", "{{plan_id}}"]
+						},
+						"description": "Retrieve a single plan by ID with all its pricing configurations. No authentication required."
+					},
+					"response": [
+						{
+							"name": "200 Success",
+							"originalRequest": {
+								"method": "GET",
+								"url": {
+									"raw": "{{base_url}}/api/v1/plans/1",
+									"host": ["{{base_url}}"],
+									"path": ["api", "v1", "plans", "1"]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"body": "{\n  \"status\": \"success\",\n  \"message\": \"Plan retrieved successfully.\",\n  \"data\": {\n    \"id\": 1,\n    \"name\": \"Starter\",\n    \"description\": \"Perfect for individuals and small projects.\",\n    \"trial_days\": 14,\n    \"has_trial\": true,\n    \"is_active\": true,\n    \"prices\": [\n      { \"id\": 1, \"currency\": \"usd\", \"billing_cycle\": \"monthly\", \"price\": \"9.99\", \"formatted_price\": \"$9.99\" },\n      { \"id\": 2, \"currency\": \"usd\", \"billing_cycle\": \"yearly\", \"price\": \"99.99\", \"formatted_price\": \"$99.99\" },\n      { \"id\": 3, \"currency\": \"aed\", \"billing_cycle\": \"monthly\", \"price\": \"36.99\", \"formatted_price\": \"د.إ36.99\" },\n      { \"id\": 4, \"currency\": \"aed\", \"billing_cycle\": \"yearly\", \"price\": \"369.99\", \"formatted_price\": \"د.إ369.99\" },\n      { \"id\": 5, \"currency\": \"egp\", \"billing_cycle\": \"monthly\", \"price\": \"499.00\", \"formatted_price\": \"ج.م499.00\" },\n      { \"id\": 6, \"currency\": \"egp\", \"billing_cycle\": \"yearly\", \"price\": \"4999.00\", \"formatted_price\": \"ج.م4999.00\" }\n    ],\n    \"created_at\": \"2026-04-04T00:00:00+00:00\",\n    \"updated_at\": \"2026-04-04T00:00:00+00:00\"\n  }\n}"
+						},
+						{
+							"name": "404 Not Found",
+							"originalRequest": {
+								"method": "GET",
+								"url": {
+									"raw": "{{base_url}}/api/v1/plans/9999",
+									"host": ["{{base_url}}"],
+									"path": ["api", "v1", "plans", "9999"]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"body": "{\n  \"status\": \"error\",\n  \"message\": \"Plan not found.\",\n  \"error\": \"plan_not_found\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Create Plan",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set('plan_id', jsonData.data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{bearer_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Premium Plan\",\n  \"description\": \"A premium subscription plan with advanced features\",\n  \"trial_days\": 30,\n  \"is_active\": true,\n  \"prices\": [\n    { \"currency\": \"usd\", \"billing_cycle\": \"monthly\", \"price\": 29.99 },\n    { \"currency\": \"usd\", \"billing_cycle\": \"yearly\", \"price\": 299.99 },\n    { \"currency\": \"aed\", \"billing_cycle\": \"monthly\", \"price\": 109.99 },\n    { \"currency\": \"egp\", \"billing_cycle\": \"monthly\", \"price\": 1499.00 }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/plans",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "plans"]
+						},
+						"description": "Create a new subscription plan with pricing configurations for multiple currencies and billing cycles. Requires authentication."
+					},
+					"response": [
+						{
+							"name": "201 Created",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{"key": "Authorization", "value": "Bearer {{bearer_token}}"},
+									{"key": "Content-Type", "value": "application/json"}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"Premium Plan\",\n  \"trial_days\": 30,\n  \"prices\": [\n    { \"currency\": \"usd\", \"billing_cycle\": \"monthly\", \"price\": 29.99 }\n  ]\n}"
+								},
+								"url": "{{base_url}}/api/v1/plans"
+							},
+							"status": "Created",
+							"code": 201,
+							"body": "{\n  \"status\": \"success\",\n  \"message\": \"Plan created successfully.\",\n  \"data\": {\n    \"id\": 4,\n    \"name\": \"Premium Plan\",\n    \"description\": \"A premium subscription plan with advanced features\",\n    \"trial_days\": 30,\n    \"has_trial\": true,\n    \"is_active\": true,\n    \"prices\": [\n      { \"id\": 19, \"currency\": \"usd\", \"billing_cycle\": \"monthly\", \"price\": \"29.99\", \"formatted_price\": \"$29.99\" },\n      { \"id\": 20, \"currency\": \"usd\", \"billing_cycle\": \"yearly\", \"price\": \"299.99\", \"formatted_price\": \"$299.99\" }\n    ],\n    \"created_at\": \"2026-04-04T12:00:00+00:00\",\n    \"updated_at\": \"2026-04-04T12:00:00+00:00\"\n  }\n}"
+						},
+						{
+							"name": "422 Validation Error",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{"key": "Authorization", "value": "Bearer {{bearer_token}}"},
+									{"key": "Content-Type", "value": "application/json"}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"\"\n}"
+								},
+								"url": "{{base_url}}/api/v1/plans"
+							},
+							"status": "Unprocessable Content",
+							"code": 422,
+							"body": "{\n  \"message\": \"The name field is required. (and 2 more errors)\",\n  \"errors\": {\n    \"name\": [\"The name field is required.\"],\n    \"trial_days\": [\"The trial days field is required.\"],\n    \"prices\": [\"The prices field is required.\"]\n  }\n}"
+						},
+						{
+							"name": "401 Unauthenticated",
+							"originalRequest": {
+								"method": "POST",
+								"header": [{"key": "Content-Type", "value": "application/json"}],
+								"body": {
+									"mode": "raw",
+									"raw": "{ \"name\": \"Test\", \"trial_days\": 7, \"prices\": [] }"
+								},
+								"url": "{{base_url}}/api/v1/plans"
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"body": "{\n  \"message\": \"Unauthenticated.\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Update Plan",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{bearer_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Updated Premium Plan\",\n  \"description\": \"Updated description\",\n  \"trial_days\": 21,\n  \"is_active\": true,\n  \"prices\": [\n    { \"currency\": \"usd\", \"billing_cycle\": \"monthly\", \"price\": 34.99 },\n    { \"currency\": \"usd\", \"billing_cycle\": \"yearly\", \"price\": 349.99 }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/plans/{{plan_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "plans", "{{plan_id}}"]
+						},
+						"description": "Update an existing plan's attributes and/or replace all its pricing configurations. Requires authentication. Sending a `prices` array will delete existing prices and create new ones."
+					},
+					"response": [
+						{
+							"name": "200 Success",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [
+									{"key": "Authorization", "value": "Bearer {{bearer_token}}"},
+									{"key": "Content-Type", "value": "application/json"}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{ \"name\": \"Updated Plan Name\", \"trial_days\": 7 }"
+								},
+								"url": "{{base_url}}/api/v1/plans/1"
+							},
+							"status": "OK",
+							"code": 200,
+							"body": "{\n  \"status\": \"success\",\n  \"message\": \"Plan updated successfully.\",\n  \"data\": {\n    \"id\": 1,\n    \"name\": \"Updated Plan Name\",\n    \"description\": \"Perfect for individuals and small projects.\",\n    \"trial_days\": 7,\n    \"has_trial\": true,\n    \"is_active\": true,\n    \"prices\": [...],\n    \"created_at\": \"2026-04-04T00:00:00+00:00\",\n    \"updated_at\": \"2026-04-04T12:00:00+00:00\"\n  }\n}"
+						}
+					]
+				},
+				{
+					"name": "Delete Plan",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{bearer_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/plans/{{plan_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "plans", "{{plan_id}}"]
+						},
+						"description": "Soft-delete a plan. The plan and its prices are soft-deleted and can be restored. Requires authentication."
+					},
+					"response": [
+						{
+							"name": "200 Success",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [{"key": "Authorization", "value": "Bearer {{bearer_token}}"}],
+								"url": "{{base_url}}/api/v1/plans/1"
+							},
+							"status": "OK",
+							"code": 200,
+							"body": "{\n  \"status\": \"success\",\n  \"message\": \"Plan deleted successfully.\"\n}"
+						}
+					]
+				}
+			],
+			"description": "Manage subscription plans. Public endpoints for listing/viewing, authenticated endpoints for CRUD operations."
+		},
+		{
+			"name": "Subscriptions",
+			"item": [
+				{
+					"name": "List My Subscriptions",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{bearer_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/subscriptions",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "subscriptions"]
+						},
+						"description": "Retrieve all subscriptions for the authenticated user, ordered by newest first."
+					},
+					"response": [
+						{
+							"name": "200 Success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [{"key": "Authorization", "value": "Bearer {{bearer_token}}"}],
+								"url": "{{base_url}}/api/v1/subscriptions"
+							},
+							"status": "OK",
+							"code": 200,
+							"body": "{\n  \"status\": \"success\",\n  \"message\": \"Subscriptions retrieved successfully.\",\n  \"data\": [\n    {\n      \"id\": 1,\n      \"user_id\": 1,\n      \"plan\": {\n        \"id\": 1,\n        \"name\": \"Starter\",\n        \"description\": \"Perfect for individuals and small projects.\",\n        \"trial_days\": 14,\n        \"has_trial\": true,\n        \"is_active\": true,\n        \"prices\": [],\n        \"created_at\": \"2026-04-04T00:00:00+00:00\",\n        \"updated_at\": \"2026-04-04T00:00:00+00:00\"\n      },\n      \"status\": \"trialing\",\n      \"currency\": \"usd\",\n      \"billing_cycle\": \"monthly\",\n      \"price\": \"9.99\",\n      \"trial_ends_at\": \"2026-04-18T00:00:00+00:00\",\n      \"starts_at\": \"2026-04-04T00:00:00+00:00\",\n      \"ends_at\": null,\n      \"grace_period_ends_at\": null,\n      \"has_access\": true,\n      \"is_in_trial\": true,\n      \"is_in_grace_period\": false,\n      \"created_at\": \"2026-04-04T00:00:00+00:00\",\n      \"updated_at\": \"2026-04-04T00:00:00+00:00\"\n    }\n  ]\n}"
+						}
+					]
+				},
+				{
+					"name": "Subscribe to a Plan",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set('subscription_id', jsonData.data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{bearer_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"plan_id\": 1,\n  \"currency\": \"usd\",\n  \"billing_cycle\": \"monthly\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/subscriptions/subscribe",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "subscriptions", "subscribe"]
+						},
+						"description": "Subscribe the authenticated user to a plan.\n\n- If the plan has a trial period, the subscription starts as `trialing` with `trial_ends_at` set.\n- If the plan has no trial, the subscription starts as `active` immediately.\n- **Idempotency:** Duplicate requests are rejected with 409 if the user already has an active subscription."
+					},
+					"response": [
+						{
+							"name": "201 Created (with trial)",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{"key": "Authorization", "value": "Bearer {{bearer_token}}"},
+									{"key": "Content-Type", "value": "application/json"}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{ \"plan_id\": 1, \"currency\": \"usd\", \"billing_cycle\": \"monthly\" }"
+								},
+								"url": "{{base_url}}/api/v1/subscriptions/subscribe"
+							},
+							"status": "Created",
+							"code": 201,
+							"body": "{\n  \"status\": \"success\",\n  \"message\": \"Subscription created successfully.\",\n  \"data\": {\n    \"id\": 1,\n    \"user_id\": 1,\n    \"plan\": { ... },\n    \"status\": \"trialing\",\n    \"currency\": \"usd\",\n    \"billing_cycle\": \"monthly\",\n    \"price\": \"9.99\",\n    \"trial_ends_at\": \"2026-04-18T00:00:00+00:00\",\n    \"starts_at\": \"2026-04-04T00:00:00+00:00\",\n    \"ends_at\": null,\n    \"grace_period_ends_at\": null,\n    \"has_access\": true,\n    \"is_in_trial\": true,\n    \"is_in_grace_period\": false\n  }\n}"
+						},
+						{
+							"name": "409 Already Subscribed",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{"key": "Authorization", "value": "Bearer {{bearer_token}}"},
+									{"key": "Content-Type", "value": "application/json"}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{ \"plan_id\": 1, \"currency\": \"usd\", \"billing_cycle\": \"monthly\" }"
+								},
+								"url": "{{base_url}}/api/v1/subscriptions/subscribe"
+							},
+							"status": "Conflict",
+							"code": 409,
+							"body": "{\n  \"status\": \"error\",\n  \"message\": \"User (ID: 1) already has an active subscription.\",\n  \"error\": \"already_subscribed\"\n}"
+						},
+						{
+							"name": "404 Price Not Found",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{"key": "Authorization", "value": "Bearer {{bearer_token}}"},
+									{"key": "Content-Type", "value": "application/json"}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{ \"plan_id\": 1, \"currency\": \"eur\", \"billing_cycle\": \"monthly\" }"
+								},
+								"url": "{{base_url}}/api/v1/subscriptions/subscribe"
+							},
+							"status": "Not Found",
+							"code": 404,
+							"body": "{\n  \"status\": \"error\",\n  \"message\": \"No price found for plan (ID: 1) with currency 'eur' and billing cycle 'monthly'.\",\n  \"error\": \"price_not_found\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Cancel Subscription",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{bearer_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/subscriptions/{{subscription_id}}/cancel",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "subscriptions", "{{subscription_id}}", "cancel"]
+						},
+						"description": "Immediately cancel the specified subscription. Sets `ends_at` to the current timestamp and transitions status to `canceled`. The user must own the subscription."
+					},
+					"response": [
+						{
+							"name": "200 Success",
+							"originalRequest": {
+								"method": "POST",
+								"header": [{"key": "Authorization", "value": "Bearer {{bearer_token}}"}],
+								"url": "{{base_url}}/api/v1/subscriptions/1/cancel"
+							},
+							"status": "OK",
+							"code": 200,
+							"body": "{\n  \"status\": \"success\",\n  \"message\": \"Subscription canceled successfully.\",\n  \"data\": {\n    \"id\": 1,\n    \"user_id\": 1,\n    \"plan\": { ... },\n    \"status\": \"canceled\",\n    \"currency\": \"usd\",\n    \"billing_cycle\": \"monthly\",\n    \"price\": \"9.99\",\n    \"trial_ends_at\": null,\n    \"starts_at\": \"2026-04-04T00:00:00+00:00\",\n    \"ends_at\": \"2026-04-04T12:00:00+00:00\",\n    \"grace_period_ends_at\": null,\n    \"has_access\": false,\n    \"is_in_trial\": false,\n    \"is_in_grace_period\": false\n  }\n}"
+						},
+						{
+							"name": "403 Forbidden (Not Owner)",
+							"originalRequest": {
+								"method": "POST",
+								"header": [{"key": "Authorization", "value": "Bearer {{bearer_token}}"}],
+								"url": "{{base_url}}/api/v1/subscriptions/999/cancel"
+							},
+							"status": "Forbidden",
+							"code": 403,
+							"body": "{\n  \"message\": \"You do not have permission to manage this subscription.\"\n}"
+						},
+						{
+							"name": "422 Invalid State",
+							"originalRequest": {
+								"method": "POST",
+								"header": [{"key": "Authorization", "value": "Bearer {{bearer_token}}"}],
+								"url": "{{base_url}}/api/v1/subscriptions/1/cancel"
+							},
+							"status": "Unprocessable Content",
+							"code": 422,
+							"body": "{\n  \"status\": \"error\",\n  \"message\": \"Cannot cancel. Subscription is in 'canceled' state. Expected: trialing, active, past_due.\",\n  \"error\": \"invalid_subscription_state\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Simulate Payment Success",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{bearer_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/subscriptions/{{subscription_id}}/simulate-payment-success",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "subscriptions", "{{subscription_id}}", "simulate-payment-success"]
+						},
+						"description": "Simulate a successful payment for a subscription in `past_due` state. Transitions the subscription back to `active` and clears the grace period. For development/testing purposes."
+					},
+					"response": [
+						{
+							"name": "200 Success",
+							"originalRequest": {
+								"method": "POST",
+								"header": [{"key": "Authorization", "value": "Bearer {{bearer_token}}"}],
+								"url": "{{base_url}}/api/v1/subscriptions/1/simulate-payment-success"
+							},
+							"status": "OK",
+							"code": 200,
+							"body": "{\n  \"status\": \"success\",\n  \"message\": \"Payment simulated successfully. Subscription reactivated.\",\n  \"data\": {\n    \"id\": 1,\n    \"user_id\": 1,\n    \"plan\": { ... },\n    \"status\": \"active\",\n    \"currency\": \"usd\",\n    \"billing_cycle\": \"monthly\",\n    \"price\": \"9.99\",\n    \"trial_ends_at\": null,\n    \"starts_at\": \"2026-04-04T00:00:00+00:00\",\n    \"ends_at\": null,\n    \"grace_period_ends_at\": null,\n    \"has_access\": true,\n    \"is_in_trial\": false,\n    \"is_in_grace_period\": false\n  }\n}"
+						}
+					]
+				},
+				{
+					"name": "Simulate Payment Failure",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{bearer_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/subscriptions/{{subscription_id}}/simulate-payment-failure",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "subscriptions", "{{subscription_id}}", "simulate-payment-failure"]
+						},
+						"description": "Simulate a payment failure for an `active` subscription. Transitions the subscription to `past_due` and sets `grace_period_ends_at` to 3 days from now. The user retains access during the grace period. For development/testing purposes."
+					},
+					"response": [
+						{
+							"name": "200 Success",
+							"originalRequest": {
+								"method": "POST",
+								"header": [{"key": "Authorization", "value": "Bearer {{bearer_token}}"}],
+								"url": "{{base_url}}/api/v1/subscriptions/1/simulate-payment-failure"
+							},
+							"status": "OK",
+							"code": 200,
+							"body": "{\n  \"status\": \"success\",\n  \"message\": \"Payment failure simulated. Subscription is now past_due.\",\n  \"data\": {\n    \"id\": 1,\n    \"user_id\": 1,\n    \"plan\": { ... },\n    \"status\": \"past_due\",\n    \"currency\": \"usd\",\n    \"billing_cycle\": \"monthly\",\n    \"price\": \"9.99\",\n    \"trial_ends_at\": null,\n    \"starts_at\": \"2026-04-04T00:00:00+00:00\",\n    \"ends_at\": null,\n    \"grace_period_ends_at\": \"2026-04-07T12:00:00+00:00\",\n    \"has_access\": true,\n    \"is_in_trial\": false,\n    \"is_in_grace_period\": true\n  }\n}"
+						}
+					]
+				}
+			],
+			"description": "Manage user subscriptions. All endpoints require authentication. Users can only manage their own subscriptions."
+		}
+	]
+}
