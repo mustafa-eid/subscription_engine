@@ -1,0 +1,57 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# Dependencies
+vendor/
+node_modules/
+
+# Build artifacts
+public/hot
+public/storage
+storage/*.key
+
+# Logs
+storage/logs/*.log
+npm-debug.log
+yarn-error.log
+
+# Testing
+.phpunit.result.cache
+coverage/
+
+# Docker
+docker/
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Compiled assets
+public/build
+public/mix-manifest.json
+
+# Compiled config
+bootstrap/cache/*.php
+
+# SQLite
+database/database.sqlite
+
+# Pail
+.pail

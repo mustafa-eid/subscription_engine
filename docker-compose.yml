@@ -1,0 +1,175 @@
+version: '3.8'
+
+services:
+  # ============================================================
+  # Application Service
+  # ============================================================
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: subscription-engine-app
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8000}:80"
+    environment:
+      - APP_ENV=${APP_ENV:-production}
+      - APP_DEBUG=${APP_DEBUG:-false}
+      - APP_URL=${APP_URL:-http://localhost:8000}
+      - DB_CONNECTION=mysql
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_DATABASE=${DB_DATABASE:-subscription_engine}
+      - DB_USERNAME=${DB_USERNAME:-subscription}
+      - DB_PASSWORD=${DB_PASSWORD:-secret}
+      - CACHE_STORE=redis
+      - REDIS_HOST=redis
+      - QUEUE_CONNECTION=database
+      - SESSION_DRIVER=cookie
+      - RUN_MIGRATIONS=true
+    volumes:
+      - storage:/var/www/html/storage
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - subscription-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ============================================================
+  # Database Service (MySQL)
+  # ============================================================
+  db:
+    image: mysql:8.0
+    container_name: subscription-engine-db
+    restart: unless-stopped
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    environment:
+      - MYSQL_DATABASE=${DB_DATABASE:-subscription_engine}
+      - MYSQL_USER=${DB_USERNAME:-subscription}
+      - MYSQL_PASSWORD=${DB_PASSWORD:-secret}
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD:-rootsecret}
+    volumes:
+      - db-data:/var/lib/mysql
+    networks:
+      - subscription-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD:-rootsecret}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ============================================================
+  # Redis Service (Cache & Sessions)
+  # ============================================================
+  redis:
+    image: redis:7-alpine
+    container_name: subscription-engine-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - subscription-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ============================================================
+  # Queue Worker (Optional - for background jobs)
+  # ============================================================
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: subscription-engine-worker
+    restart: unless-stopped
+    command: php artisan queue:work --tries=3 --timeout=60
+    environment:
+      - APP_ENV=${APP_ENV:-production}
+      - DB_CONNECTION=mysql
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_DATABASE=${DB_DATABASE:-subscription_engine}
+      - DB_USERNAME=${DB_USERNAME:-subscription}
+      - DB_PASSWORD=${DB_PASSWORD:-secret}
+      - CACHE_STORE=redis
+      - REDIS_HOST=redis
+      - QUEUE_CONNECTION=database
+    depends_on:
+      - app
+      - db
+      - redis
+    networks:
+      - subscription-network
+
+  # ============================================================
+  # Scheduler (Optional - for automated tasks)
+  # ============================================================
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: subscription-engine-scheduler
+    restart: unless-stopped
+    command: php artisan schedule:work
+    environment:
+      - APP_ENV=${APP_ENV:-production}
+      - DB_CONNECTION=mysql
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_DATABASE=${DB_DATABASE:-subscription_engine}
+      - DB_USERNAME=${DB_USERNAME:-subscription}
+      - DB_PASSWORD=${DB_PASSWORD:-secret}
+      - CACHE_STORE=redis
+      - REDIS_HOST=redis
+    depends_on:
+      - app
+      - db
+    networks:
+      - subscription-network
+
+  # ============================================================
+  # Development Services (Only used in dev environment)
+  # ============================================================
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: subscription-engine-phpmyadmin
+    restart: unless-stopped
+    ports:
+      - "${PMA_PORT:-8080}:80"
+    environment:
+      - PMA_HOST=db
+      - PMA_PORT=3306
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD:-rootsecret}
+    depends_on:
+      - db
+    networks:
+      - subscription-network
+    profiles:
+      - dev
+
+networks:
+  subscription-network:
+    driver: bridge
+
+volumes:
+  db-data:
+    driver: local
+  redis-data:
+    driver: local
+  storage:
+    driver: local

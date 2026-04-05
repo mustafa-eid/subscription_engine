@@ -9,9 +9,14 @@ A production-ready, multi-currency subscription management API built with Larave
 - [Overview](#overview)
 - [Subscription Lifecycle](#subscription-lifecycle)
 - [Architecture & Design](#architecture--design)
+- [Features](#features)
 - [Installation](#installation)
+- [Docker Deployment](#docker-deployment)
+- [Configuration](#configuration)
 - [Scheduler / CRON](#scheduler--cron)
 - [API Usage](#api-usage)
+- [Health Checks](#health-checks)
+- [Webhooks](#webhooks)
 - [Testing](#testing)
 - [Postman Collection](#postman-collection)
 - [Notes](#notes)
@@ -27,6 +32,9 @@ This API provides a complete subscription management system with the following c
 - **Payment Failure & Grace Period** — When a payment fails, the subscription moves to `past_due` with a 3-day grace period during which the user retains full access.
 - **Automated Lifecycle Processing** — A daily scheduled command automatically transitions expired trials to active and cancels subscriptions whose grace periods have expired.
 - **Event-Driven Architecture** — Every state transition dispatches domain events (`SubscriptionActivated`, `SubscriptionPastDue`, `SubscriptionCanceled`) for integration with external systems (email, analytics, webhooks).
+- **Payment Gateway Abstraction** — Provider-agnostic payment processing with support for Stripe, Paddle, and custom gateways.
+- **Audit Logging** — Complete subscription change history with request tracking and compliance support.
+- **Health Monitoring** — Built-in health check endpoints for monitoring service status.
 
 ---
 
@@ -106,6 +114,45 @@ A user **has access** to subscription features when:
 | **Idempotency** | Application-level duplicate check + database-level unique constraint on active subscriptions prevents race conditions |
 | **ApiResponse Trait** | All controllers use `ApiResponse` for consistent `{ status, message, data, meta }` JSON responses |
 | **State Transition Guards** | `ALLOWED_TRANSITIONS` matrix in the `Subscription` model prevents invalid state changes |
+| **Authorization Policies** | `SubscriptionPolicy` and `PlanPolicy` for fine-grained access control |
+| **Audit Trail** | `SubscriptionAuditLog` tracks all state changes with metadata |
+
+---
+
+## Features
+
+### Core Features
+- ✅ Multi-currency pricing (USD, AED, EGP)
+- ✅ Flexible billing cycles (Monthly, Yearly)
+- ✅ Configurable trial periods
+- ✅ Payment failure recovery with grace period
+- ✅ Automated subscription lifecycle processing
+- ✅ Event-driven architecture
+- ✅ Structured logging
+
+### Security & Authorization
+- ✅ Policy-based authorization (`SubscriptionPolicy`, `PlanPolicy`)
+- ✅ Rate limiting (endpoint-specific limits)
+- ✅ Webhook signature verification
+- ✅ Request ID tracking for distributed tracing
+
+### Monitoring & Observability
+- ✅ Health check endpoints (`/api/health`, `/api/health/detailed`)
+- ✅ Subscription audit logging
+- ✅ Service status monitoring (database, cache, queue)
+- ✅ Response time tracking
+
+### Payment Integration
+- ✅ Payment gateway abstraction layer
+- ✅ Stripe integration (stub for production)
+- ✅ Webhook handling for payment confirmations
+- ✅ Easy to add custom payment providers
+
+### Deployment & DevOps
+- ✅ Docker support (Dockerfile + docker-compose.yml)
+- ✅ CI/CD pipeline (GitHub Actions)
+- ✅ Environment-based configuration
+- ✅ Production-ready configuration
 
 ---
 
@@ -115,7 +162,7 @@ A user **has access** to subscription features when:
 
 - PHP 8.3+
 - Composer
-- SQLite, MySQL, or PostgreSQL
+- MySQL, PostgreSQL, or SQLite
 
 ### Steps
 
@@ -142,6 +189,72 @@ php artisan serve
 ```
 
 The seeder creates 3 demo plans (Starter, Professional, Enterprise) with pricing in USD, AED, and EGP for both monthly and yearly billing cycles.
+
+---
+
+## Docker Deployment
+
+### Quick Start
+
+```bash
+# Start all services (app, database, redis, worker, scheduler)
+docker-compose up -d
+
+# Run migrations
+docker-compose exec app php artisan migrate --force
+
+# Seed demo data
+docker-compose exec app php artisan db:seed
+
+# Access the application
+open http://localhost:8000
+```
+
+### Services
+
+| Service | Description | Port |
+|---------|-------------|------|
+| **app** | Main application (PHP-FPM + Nginx) | 8000 |
+| **db** | MySQL 8.0 database | 3306 |
+| **redis** | Redis for cache/sessions | 6379 |
+| **worker** | Queue worker for background jobs | — |
+| **scheduler** | Laravel scheduler for automated tasks | — |
+| **phpmyadmin** | Database management (dev only) | 8080 |
+
+### Environment Variables
+
+```env
+APP_PORT=8000
+DB_PORT=3306
+REDIS_PORT=6379
+PMA_PORT=8080
+```
+
+---
+
+## Configuration
+
+All business rules are centralized in `config/subscriptions.php`:
+
+### Key Configuration Options
+
+| Config Key | Default | Environment Variable | Description |
+|------------|---------|---------------------|-------------|
+| `grace_period_days` | 3 | `SUBSCRIPTION_GRACE_PERIOD_DAYS` | Days before canceled after payment failure |
+| `scheduler.chunk_size` | 100 | `SUBSCRIPTION_SCHEDULER_CHUNK_SIZE` | Batch size for scheduler |
+| `payment.default_driver` | stripe | `PAYMENT_DRIVER` | Default payment gateway |
+| `audit.enabled` | true | `SUBSCRIPTION_AUDIT_ENABLED` | Enable audit logging |
+| `audit.retention_days` | 365 | `SUBSCRIPTION_AUDIT_RETENTION_DAYS` | Audit log retention |
+| `timezone` | UTC | `SUBSCRIPTION_TIMEZONE` | Application timezone |
+
+### Rate Limiting
+
+| Endpoint | Limit | Environment Variables |
+|----------|-------|----------------------|
+| Default API | 60/min | — |
+| Subscribe | 10/min | `SUBSCRIBE_RATE_LIMIT_ATTEMPTS`, `SUBSCRIBE_RATE_LIMIT_DECAY` |
+| Cancel | 5/min | `CANCEL_RATE_LIMIT_ATTEMPTS`, `CANCEL_RATE_LIMIT_DECAY` |
+| Webhook | 100/min | `WEBHOOK_RATE_LIMIT_ATTEMPTS`, `WEBHOOK_RATE_LIMIT_DECAY` |
 
 ---
 
@@ -233,6 +346,13 @@ All responses follow a consistent structure via the `ApiResponse` trait:
 ```
 
 ### Endpoints
+
+#### Health Checks
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|:----:|-------------|
+| `GET` | `/api/health` | — | Basic health check |
+| `GET` | `/api/health/detailed` | — | Detailed health check with metrics |
 
 #### Plans
 
@@ -332,9 +452,70 @@ The `subscribe` endpoint is idempotent:
 
 ---
 
+## Health Checks
+
+### Basic Health Check
+
+```bash
+GET /api/health
+```
+
+**Response:**
+```json
+{
+  "status": "ok",
+  "timestamp": "2026-04-06T00:00:00+00:00",
+  "version": "1.0.0",
+  "environment": "production",
+  "timezone": "UTC",
+  "services": {
+    "database": { "status": "ok", "response_time_ms": 2.5, "connection": "mysql" },
+    "cache": { "status": "ok", "response_time_ms": 1.2, "driver": "redis" },
+    "queue": { "status": "ok", "response_time_ms": 0.8, "driver": "database", "pending_jobs": 0 }
+  }
+}
+```
+
+### Detailed Health Check
+
+```bash
+GET /api/health/detailed
+```
+
+Includes additional metrics:
+- Subscription counts (active, past_due, canceled)
+- Configuration values
+- Service response times
+
+---
+
+## Webhooks
+
+### Payment Webhook
+
+```bash
+POST /api/webhooks/payment
+```
+
+Handles payment gateway webhook events with signature verification.
+
+**Headers:**
+```
+X-Webhook-Signature: {signature}
+```
+
+**Supported Events:**
+- `payment.succeeded` - Auto-activate subscriptions
+- `payment.failed` - Move to past_due status
+- `subscription.canceled` - Handle external cancellations
+- `subscription.updated` - Sync changes
+- `subscription.trial_ending` - Send notifications
+
+---
+
 ## Testing
 
-The project includes **70 feature tests** with **215+ assertions** covering the entire subscription lifecycle, API endpoints, event dispatch, logging, idempotency, and batch processing.
+The project includes **72 feature tests** with **217 assertions** covering the entire subscription lifecycle, API endpoints, event dispatch, logging, idempotency, and batch processing.
 
 ```bash
 # Run all tests
@@ -379,7 +560,11 @@ It includes all endpoints with example request bodies, headers, query parameters
 
 ### Rate Limiting
 
-All API routes are rate-limited to **60 requests per minute** per authenticated user (or per IP for unauthenticated requests).
+All API routes are rate-limited with endpoint-specific limits:
+- Default API: **60 requests per minute**
+- Subscribe: **10 requests per minute**
+- Cancel: **5 requests per minute**
+- Webhook: **100 requests per minute**
 
 ### Events
 
@@ -412,6 +597,16 @@ All lifecycle transitions are logged with structured context:
 
 Log entries are written to `storage/logs/laravel.log`. The scheduler also appends output to `storage/logs/scheduler-subscriptions.log`.
 
+### Audit Logging
+
+All subscription state changes are logged to the `subscription_audit_logs` table with:
+- Event type and old/new status
+- Metadata (plan details, pricing, etc.)
+- Triggered by (user, system, scheduler, webhook)
+- Request ID for tracing
+- IP address and user agent
+- Timestamp
+
 ### Database Schema
 
 ```
@@ -422,6 +617,7 @@ plans
 ├── trial_days
 ├── is_active
 ├── timestamps + soft_deletes
+└── index(is_active)
 
 plan_prices
 ├── id
@@ -430,7 +626,8 @@ plan_prices
 ├── billing_cycle (enum: monthly, yearly)
 ├── price (decimal)
 ├── timestamps
-└── unique(plan_id, currency, billing_cycle)
+├── unique(plan_id, currency, billing_cycle)
+└── index(currency, billing_cycle)
 
 subscriptions
 ├── id
@@ -445,5 +642,44 @@ subscriptions
 ├── ends_at
 ├── grace_period_ends_at
 ├── timestamps + soft_deletes
-└── unique(active_user_id) — idempotency constraint
+├── unique(active_user_id) — idempotency constraint
+├── index(user_id, status)
+├── index(status, trial_ends_at)
+├── index(status, grace_period_ends_at)
+└── index(user_id, created_at)
+
+subscription_audit_logs
+├── id
+├── subscription_id (FK → subscriptions)
+├── user_id (FK → users)
+├── event_type
+├── old_status
+├── new_status
+├── metadata (JSON)
+├── triggered_by
+├── request_id
+├── ip_address
+├── user_agent
+├── occurred_at
+└── timestamps
+```
+
+### CI/CD Pipeline
+
+The project includes a GitHub Actions workflow (`.github/workflows/ci-cd.yml`) with:
+- **Test Job**: PHP 8.3, MySQL 8.0, code style (Pint), static analysis (PHPStan), coverage
+- **Security Job**: Dependency audit and vulnerability scanning
+- **Docker Job**: Build and test Docker image
+- **Deploy Job**: Production deployment (customizable)
+
+### Timezone Handling
+
+All timestamps are stored in UTC. Use the verification command:
+
+```bash
+# Check timezone consistency
+php artisan timezones:verify
+
+# Fix non-UTC timestamps
+php artisan timezones:verify --fix
 ```

@@ -30,6 +30,9 @@ return new class extends Migration
             // Indexes for common query patterns
             $table->index('currency');
             $table->index('billing_cycle');
+
+            // Composite index for price lookups by currency and billing cycle
+            $table->index(['currency', 'billing_cycle'], 'idx_currency_cycle');
         });
     }
 

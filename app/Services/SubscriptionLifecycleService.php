@@ -12,6 +12,7 @@ use App\Exceptions\PlanNotFoundException;
 use App\Exceptions\PriceNotFoundException;
 use App\Models\Plan;
 use App\Models\Subscription;
+use App\Models\SubscriptionAuditLog;
 use App\Repositories\PlanRepositoryInterface;
 use App\Repositories\SubscriptionRepositoryInterface;
 use Illuminate\Support\Carbon;
@@ -40,11 +41,6 @@ use Illuminate\Support\Facades\Log;
  */
 class SubscriptionLifecycleService
 {
-    /**
-     * Number of days for the grace period after a payment failure.
-     */
-    private const GRACE_PERIOD_DAYS = 3;
-
     public function __construct(
         private readonly PlanRepositoryInterface $planRepository,
         private readonly SubscriptionRepositoryInterface $subscriptionRepository,
@@ -150,6 +146,24 @@ class SubscriptionLifecycleService
                 'trial_ends_at' => $trialEndsAt?->toIso8601String(),
             ]);
 
+            // Create audit log entry
+            if (config('subscriptions.audit.enabled', true)) {
+                SubscriptionAuditLog::logEvent(
+                    subscription: $subscription,
+                    eventType: 'subscribed',
+                    oldStatus: null,
+                    newStatus: $status->value,
+                    metadata: [
+                        'plan_id' => $planId,
+                        'currency' => $currency,
+                        'billing_cycle' => $billingCycle,
+                        'price' => $planPrice->price,
+                        'trial_days' => $plan->trial_days,
+                    ],
+                    triggeredBy: 'user',
+                );
+            }
+
             // Dispatch event if the subscription starts as active (no trial)
             if ($status === SubscriptionStatus::ACTIVE) {
                 event(new SubscriptionActivated(
@@ -201,6 +215,20 @@ class SubscriptionLifecycleService
                 'new_status' => SubscriptionStatus::ACTIVE->value,
             ]);
 
+            // Create audit log entry
+            if (config('subscriptions.audit.enabled', true)) {
+                SubscriptionAuditLog::logEvent(
+                    subscription: $subscription,
+                    eventType: 'trial_expired',
+                    oldStatus: $oldStatus->value,
+                    newStatus: SubscriptionStatus::ACTIVE->value,
+                    metadata: [
+                        'trial_ends_at' => $subscription->trial_ends_at?->toIso8601String(),
+                    ],
+                    triggeredBy: 'scheduler',
+                );
+            }
+
             event(new SubscriptionActivated($subscription, $subscription->user_id, $oldStatus));
 
             return $subscription;
@@ -229,7 +257,7 @@ class SubscriptionLifecycleService
 
         return DB::transaction(function () use ($subscription) {
             $oldStatus = $subscription->status;
-            $gracePeriodEndsAt = now()->addDays(self::GRACE_PERIOD_DAYS);
+            $gracePeriodEndsAt = now()->addDays(config('subscriptions.grace_period_days', 3));
 
             $this->subscriptionRepository->update($subscription, [
                 'status' => SubscriptionStatus::PAST_DUE->value,
@@ -246,6 +274,21 @@ class SubscriptionLifecycleService
                 'new_status' => SubscriptionStatus::PAST_DUE->value,
                 'grace_period_ends_at' => $gracePeriodEndsAt->toIso8601String(),
             ]);
+
+            // Create audit log entry
+            if (config('subscriptions.audit.enabled', true)) {
+                SubscriptionAuditLog::logEvent(
+                    subscription: $subscription,
+                    eventType: 'payment_failed',
+                    oldStatus: $oldStatus->value,
+                    newStatus: SubscriptionStatus::PAST_DUE->value,
+                    metadata: [
+                        'grace_period_days' => config('subscriptions.grace_period_days', 3),
+                        'grace_period_ends_at' => $gracePeriodEndsAt->toIso8601String(),
+                    ],
+                    triggeredBy: 'system',
+                );
+            }
 
             event(new SubscriptionPastDue($subscription, $subscription->user_id, $oldStatus));
 
@@ -289,6 +332,20 @@ class SubscriptionLifecycleService
                 'new_status' => SubscriptionStatus::ACTIVE->value,
             ]);
 
+            // Create audit log entry
+            if (config('subscriptions.audit.enabled', true)) {
+                SubscriptionAuditLog::logEvent(
+                    subscription: $subscription,
+                    eventType: 'payment_recovered',
+                    oldStatus: $oldStatus->value,
+                    newStatus: SubscriptionStatus::ACTIVE->value,
+                    metadata: [
+                        'recovered_from_grace_period' => true,
+                    ],
+                    triggeredBy: 'system',
+                );
+            }
+
             event(new SubscriptionActivated($subscription, $subscription->user_id, $oldStatus));
 
             return $subscription;
@@ -331,6 +388,20 @@ class SubscriptionLifecycleService
                 'old_status' => $oldStatus->value,
                 'new_status' => SubscriptionStatus::CANCELED->value,
             ]);
+
+            // Create audit log entry
+            if (config('subscriptions.audit.enabled', true)) {
+                SubscriptionAuditLog::logEvent(
+                    subscription: $subscription,
+                    eventType: 'grace_period_expired',
+                    oldStatus: $oldStatus->value,
+                    newStatus: SubscriptionStatus::CANCELED->value,
+                    metadata: [
+                        'reason' => 'grace_period_expired_without_payment',
+                    ],
+                    triggeredBy: 'scheduler',
+                );
+            }
 
             event(new SubscriptionCanceled($subscription, $subscription->user_id, $oldStatus));
 
@@ -378,6 +449,20 @@ class SubscriptionLifecycleService
                 'old_status' => $oldStatus->value,
                 'new_status' => SubscriptionStatus::CANCELED->value,
             ]);
+
+            // Create audit log entry
+            if (config('subscriptions.audit.enabled', true)) {
+                SubscriptionAuditLog::logEvent(
+                    subscription: $subscription,
+                    eventType: 'canceled',
+                    oldStatus: $oldStatus->value,
+                    newStatus: SubscriptionStatus::CANCELED->value,
+                    metadata: [
+                        'previous_status' => $oldStatus->value,
+                    ],
+                    triggeredBy: 'user',
+                );
+            }
 
             event(new SubscriptionCanceled($subscription, $subscription->user_id, $oldStatus));
 

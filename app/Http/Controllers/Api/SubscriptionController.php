@@ -10,10 +10,13 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\SubscribeRequest;
 use App\Http\Resources\SubscriptionResource;
 use App\Http\Traits\ApiResponse;
+use App\Models\Subscription;
 use App\Repositories\SubscriptionRepositoryInterface;
 use App\Services\SubscriptionLifecycleService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 /**
  * Subscription Controller
@@ -82,6 +85,8 @@ class SubscriptionController extends Controller
      */
     public function index(): JsonResponse
     {
+        Gate::authorize('viewAny', Subscription::class);
+
         $subscriptions = $this->subscriptionRepository->findByUser(Auth::id());
 
         return $this->success(
@@ -102,8 +107,8 @@ class SubscriptionController extends Controller
     {
         $subscription = $this->subscriptionRepository->findByIdOrFail($id);
 
-        // Ensure the user owns this subscription
-        $this->ensureSubscriptionOwner($subscription);
+        // Use policy to check authorization
+        Gate::authorize('cancel', $subscription);
 
         $subscription = $this->lifecycleService->cancel($subscription);
 
@@ -127,7 +132,7 @@ class SubscriptionController extends Controller
     {
         $subscription = $this->subscriptionRepository->findByIdOrFail($id);
 
-        $this->ensureSubscriptionOwner($subscription);
+        Gate::authorize('simulatePayment', $subscription);
 
         $subscription = $this->lifecycleService->handlePaymentSuccess($subscription);
 
@@ -151,7 +156,7 @@ class SubscriptionController extends Controller
     {
         $subscription = $this->subscriptionRepository->findByIdOrFail($id);
 
-        $this->ensureSubscriptionOwner($subscription);
+        Gate::authorize('simulatePayment', $subscription);
 
         $subscription = $this->lifecycleService->handlePaymentFailure($subscription);
 
@@ -159,18 +164,5 @@ class SubscriptionController extends Controller
             SubscriptionResource::make($subscription)->resolve(),
             'Payment failure simulated. Subscription is now past_due.'
         );
-    }
-
-    /**
-     * Ensure the authenticated user owns the subscription.
-     *
-     * @param  \App\Models\Subscription  $subscription  The subscription to check
-     * @throws \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException
-     */
-    private function ensureSubscriptionOwner(\App\Models\Subscription $subscription): void
-    {
-        if ($subscription->user_id !== Auth::id()) {
-            abort(403, 'You do not have permission to manage this subscription.');
-        }
     }
 }

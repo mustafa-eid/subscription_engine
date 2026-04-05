@@ -7,9 +7,11 @@ use App\Http\Requests\StorePlanRequest;
 use App\Http\Requests\UpdatePlanRequest;
 use App\Http\Resources\PlanResource;
 use App\Http\Traits\ApiResponse;
+use App\Models\Plan;
 use App\Repositories\PlanRepositoryInterface;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 /**
  * Plan Controller
@@ -66,9 +68,11 @@ class PlanController extends Controller
      */
     public function store(StorePlanRequest $request): JsonResponse
     {
+        Gate::authorize('create', Plan::class);
+
         $validated = $request->validated();
 
-        $plan = \App\Models\Plan::create([
+        $plan = Plan::create([
             'name' => $validated['name'],
             'description' => $validated['description'] ?? null,
             'trial_days' => $validated['trial_days'],
@@ -104,6 +108,8 @@ class PlanController extends Controller
     {
         $plan = $this->planRepository->findByIdOrFail($id);
 
+        Gate::authorize('view', $plan);
+
         return $this->success(
             PlanResource::make($plan),
             'Plan retrieved successfully.'
@@ -123,6 +129,9 @@ class PlanController extends Controller
     public function update(UpdatePlanRequest $request, int $id): JsonResponse
     {
         $plan = $this->planRepository->findByIdOrFail($id);
+
+        Gate::authorize('update', $plan);
+
         $validated = $request->validated();
 
         // Update plan attributes
@@ -158,6 +167,9 @@ class PlanController extends Controller
     public function destroy(int $id): JsonResponse
     {
         $plan = $this->planRepository->findByIdOrFail($id);
+
+        Gate::authorize('delete', $plan);
+
         $plan->delete();
 
         return $this->success(

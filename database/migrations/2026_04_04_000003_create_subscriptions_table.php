@@ -40,6 +40,15 @@ return new class extends Migration
 
             // Composite index for user subscription lookups
             $table->index(['user_id', 'status']);
+
+            // Composite index for scheduler queries (expired trials)
+            $table->index(['status', 'trial_ends_at'], 'idx_status_trial_ends');
+
+            // Composite index for scheduler queries (expired grace periods)
+            $table->index(['status', 'grace_period_ends_at'], 'idx_status_grace_ends');
+
+            // Composite index for user subscription history queries
+            $table->index(['user_id', 'created_at'], 'idx_user_created');
         });
     }
 

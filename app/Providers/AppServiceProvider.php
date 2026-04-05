@@ -2,6 +2,10 @@
 
 namespace App\Providers;
 
+use App\Contracts\PaymentGatewayInterface;
+use App\Gateways\PaymentGatewayManager;
+use App\Gateways\StripePaymentGateway;
+use App\Gateways\StubPaymentGateway;
 use App\Repositories\EloquentPlanRepository;
 use App\Repositories\EloquentSubscriptionRepository;
 use App\Repositories\PlanRepositoryInterface;
@@ -29,6 +33,16 @@ class AppServiceProvider extends ServiceProvider
         // Bind repository interfaces to their Eloquent implementations
         $this->app->bind(PlanRepositoryInterface::class, EloquentPlanRepository::class);
         $this->app->bind(SubscriptionRepositoryInterface::class, EloquentSubscriptionRepository::class);
+
+        // Bind payment gateway manager
+        $this->app->singleton(PaymentGatewayManager::class, function ($app) {
+            return new PaymentGatewayManager();
+        });
+
+        // Bind payment gateway interface to manager's default driver
+        $this->app->bind(PaymentGatewayInterface::class, function ($app) {
+            return $app->make(PaymentGatewayManager::class)->getDefaultDriver();
+        });
     }
 
     /**

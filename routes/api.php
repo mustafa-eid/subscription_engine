@@ -22,9 +22,42 @@
  *   - POST   /api/v1/subscriptions/{id}/simulate-payment-failure — Simulate payment failure (dev)
  */
 
+use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\PlanController;
 use App\Http\Controllers\Api\SubscriptionController;
+use App\Http\Controllers\Api\WebhookController;
 use Illuminate\Support\Facades\Route;
+
+// =========================================================================
+//  Health Check Routes - Public, no authentication required
+// =========================================================================
+
+/**
+ * GET /api/health
+ * Basic health check for monitoring service status.
+ */
+Route::get('/health', HealthController::class);
+
+/**
+ * GET /api/health/detailed
+ * Detailed health check with metrics and configuration.
+ */
+Route::get('/health/detailed', [HealthController::class, 'detailed']);
+
+// =========================================================================
+//  Webhook Routes - Public but signature-verified
+// =========================================================================
+
+/**
+ * POST /api/webhooks/payment
+ * Handle payment gateway webhook events.
+ * Signature verification ensures only valid webhooks are processed.
+ */
+Route::post('/webhooks/payment', WebhookController::class)->middleware('throttle:webhook');
+
+// =========================================================================
+//  API v1 Routes
+// =========================================================================
 
 Route::prefix('v1')->group(function () {
 
