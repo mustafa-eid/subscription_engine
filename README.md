@@ -162,7 +162,36 @@ Choose one of the setup methods below:
 - **[Docker Setup](DOCKER_SETUP.md)** — Recommended (no manual PHP/MySQL installation needed)
 - **[Local Setup](LOCAL_SETUP.md)** — Using XAMPP, MAMP, or any local PHP environment
 
----
+### Quick Start (Local)
+
+```bash
+# One-command setup (installs dependencies, creates .env, generates key, migrates & seeds)
+composer setup
+
+# Or for SQLite (no database server needed):
+composer setup:sqlite
+
+# Start the server
+php artisan serve
+```
+
+### Test Credentials
+
+After seeding, you can test authenticated endpoints with:
+
+| Field | Value |
+|-------|-------|
+| **Email** | `test@example.com` |
+| **Password** | `TestPass123` |
+
+Or register a new user via the API:
+
+```bash
+curl -X POST http://localhost:8000/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"name":"John","email":"john@example.com","password":"TestPass123","password_confirmation":"TestPass123"}'
+```
+
 ---
 
 ## Configuration
@@ -286,6 +315,44 @@ All responses follow a consistent structure via the `ApiResponse` trait:
 |--------|----------|:----:|-------------|
 | `GET` | `/api/health` | — | Basic health check |
 | `GET` | `/api/health/detailed` | — | Detailed health check with metrics |
+
+#### Authentication
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|:----:|-------------|
+| `POST` | `/api/v1/auth/register` | — | Register a new user and return token |
+| `POST` | `/api/v1/auth/login` | — | Login and return token |
+
+**Register Request Body:**
+```json
+{
+  "name": "John Doe",
+  "email": "john@example.com",
+  "password": "TestPass123",
+  "password_confirmation": "TestPass123"
+}
+```
+
+**Login Request Body:**
+```json
+{
+  "email": "test@example.com",
+  "password": "TestPass123"
+}
+```
+
+**Response (both endpoints):**
+```json
+{
+  "status": "success",
+  "message": "...",
+  "data": {
+    "user": { "id": 1, "name": "John Doe", "email": "john@example.com" },
+    "token": "1|abc123...",
+    "token_type": "Bearer"
+  }
+}
+```
 
 #### Plans
 
