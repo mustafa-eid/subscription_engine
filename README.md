@@ -168,9 +168,6 @@ Choose one of the setup methods below:
 # One-command setup (installs dependencies, creates .env, generates key, migrates & seeds)
 composer setup
 
-# Or for SQLite (no database server needed):
-composer setup:sqlite
-
 # Start the server
 php artisan serve
 ```
