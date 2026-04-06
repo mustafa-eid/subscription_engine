@@ -15,12 +15,14 @@ class DatabaseSeeder extends Seeder
     /**
      * Seed the application's database.
      *
-     * Currently seeds demo plan data with multi-currency pricing.
+     * Seeds demo plan data with multi-currency pricing
+     * and a test user for authenticated endpoint testing.
      */
     public function run(): void
     {
         $this->call([
             PlanSeeder::class,
+            TestUserSeeder::class,
         ]);
     }
 }

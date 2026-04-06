@@ -22,6 +22,7 @@
  *   - POST   /api/v1/subscriptions/{id}/simulate-payment-failure — Simulate payment failure (dev)
  */
 
+use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\PlanController;
 use App\Http\Controllers\Api\SubscriptionController;
@@ -60,6 +61,26 @@ Route::post('/webhooks/payment', WebhookController::class)->middleware('throttle
 // =========================================================================
 
 Route::prefix('v1')->group(function () {
+
+    // =========================================================================
+    //  Authentication Routes — Public, no authentication required
+    // =========================================================================
+
+    Route::prefix('auth')->group(function () {
+        /**
+         * POST /api/v1/auth/register
+         * Register a new user and return an authentication token.
+         * Body: { name, email, password, password_confirmation }
+         */
+        Route::post('/register', [AuthController::class, 'register']);
+
+        /**
+         * POST /api/v1/auth/login
+         * Authenticate a user and return an access token.
+         * Body: { email, password }
+         */
+        Route::post('/login', [AuthController::class, 'login']);
+    });
 
     // =========================================================================
     //  Public Routes — No authentication required
