@@ -155,23 +155,18 @@ A user **has access** to subscription features when:
 
 ## Installation
 
-### Prerequisites
+Choose one of the setup methods below:
 
-- PHP 8.3+
-- Composer
-- MySQL
+- **[Docker Setup](DOCKER_SETUP.md)** — Recommended (no manual PHP/MySQL installation needed)
+- **[Local Setup](LOCAL_SETUP.md)** — Using XAMPP, MAMP, Laragon, or any local PHP environment
 
 ### Quick Start
 
 ```bash
-# 1. Clone the repository
-git clone <repository-url>
-cd subscription-engine
-
-# 2. One-command setup (installs dependencies, creates .env, generates key, migrates & seeds)
+# One-command setup (installs dependencies, creates .env, generates key, migrates & seeds)
 composer setup
 
-# 3. Start the server
+# Start the server
 php artisan serve
 ```
 
@@ -188,17 +183,14 @@ cp .env.example .env
 php artisan key:generate
 
 # 3. Configure your MySQL database in .env
-#    DB_CONNECTION=mysql
-#    DB_HOST=127.0.0.1
-#    DB_PORT=3306
-#    DB_DATABASE=subscription_engine
-#    DB_USERNAME=root
-#    DB_PASSWORD=your_password
 
-# 4. Run migrations and seed demo data
+# 4. Create database
+mysql -u root -p -e "CREATE DATABASE subscription_engine;"
+
+# 5. Run migrations and seed demo data
 php artisan migrate --seed
 
-# 5. Start the server
+# 6. Start the server
 php artisan serve
 ```
 
