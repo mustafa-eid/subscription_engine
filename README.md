@@ -11,7 +11,6 @@ A production-ready, multi-currency subscription management API built with Larave
 - [Architecture & Design](#architecture--design)
 - [Features](#features)
 - [Installation](#installation)
-- [Docker Deployment](#docker-deployment)
 - [Configuration](#configuration)
 - [Scheduler / CRON](#scheduler--cron)
 - [API Usage](#api-usage)
@@ -149,7 +148,6 @@ A user **has access** to subscription features when:
 - ✅ Easy to add custom payment providers
 
 ### Deployment & DevOps
-- ✅ Docker support (Dockerfile + docker-compose.yml)
 - ✅ Environment-based configuration
 - ✅ Production-ready configuration
 
@@ -157,22 +155,54 @@ A user **has access** to subscription features when:
 
 ## Installation
 
-Choose one of the setup methods below:
+### Prerequisites
 
-- **[Docker Setup](DOCKER_SETUP.md)** — Recommended (no manual PHP/MySQL installation needed)
-- **[Local Setup](LOCAL_SETUP.md)** — Using XAMPP, MAMP, or any local PHP environment
+- PHP 8.3+
+- Composer
+- MySQL
 
-### Quick Start (Local)
+### Quick Start
 
 ```bash
-# One-command setup (installs dependencies, creates .env, generates key, migrates & seeds)
+# 1. Clone the repository
+git clone <repository-url>
+cd subscription-engine
+
+# 2. One-command setup (installs dependencies, creates .env, generates key, migrates & seeds)
 composer setup
 
-# Start the server
+# 3. Start the server
 php artisan serve
 ```
 
-### Test Credentials
+Open: http://localhost:8000
+
+### Manual Setup
+
+```bash
+# 1. Install dependencies
+composer install
+
+# 2. Configure environment
+cp .env.example .env
+php artisan key:generate
+
+# 3. Configure your MySQL database in .env
+#    DB_CONNECTION=mysql
+#    DB_HOST=127.0.0.1
+#    DB_PORT=3306
+#    DB_DATABASE=subscription_engine
+#    DB_USERNAME=root
+#    DB_PASSWORD=your_password
+
+# 4. Run migrations and seed demo data
+php artisan migrate --seed
+
+# 5. Start the server
+php artisan serve
+```
+
+The seeder creates 3 demo plans (Starter, Professional, Enterprise) with pricing in USD, AED, and EGP, plus a test user for authenticated endpoint testing.
 
 After seeding, you can test authenticated endpoints with:
 
