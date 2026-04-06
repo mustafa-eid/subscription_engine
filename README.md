@@ -150,7 +150,6 @@ A user **has access** to subscription features when:
 
 ### Deployment & DevOps
 - ✅ Docker support (Dockerfile + docker-compose.yml)
-- ✅ CI/CD pipeline (GitHub Actions)
 - ✅ Environment-based configuration
 - ✅ Production-ready configuration
 
@@ -663,14 +662,6 @@ subscription_audit_logs
 ├── occurred_at
 └── timestamps
 ```
-
-### CI/CD Pipeline
-
-The project includes a GitHub Actions workflow (`.github/workflows/ci-cd.yml`) with:
-- **Test Job**: PHP 8.3, MySQL 8.0, code style (Pint), static analysis (PHPStan), coverage
-- **Security Job**: Dependency audit and vulnerability scanning
-- **Docker Job**: Build and test Docker image
-- **Deploy Job**: Production deployment (customizable)
 
 ### Timezone Handling
 
