@@ -157,78 +157,12 @@ A user **has access** to subscription features when:
 
 ## Installation
 
-### Prerequisites
+Choose one of the setup methods below:
 
-- PHP 8.3+
-- Composer
-- MySQL, PostgreSQL, or SQLite
-
-### Steps
-
-```bash
-# 1. Clone the repository
-git clone <repository-url>
-cd subscription-engine
-
-# 2. Install dependencies
-composer install
-
-# 3. Configure environment
-cp .env.example .env
-# Edit .env and set your database credentials
-
-# 4. Generate application key
-php artisan key:generate
-
-# 5. Run migrations and seed demo data
-php artisan migrate --seed
-
-# 6. Start the development server
-php artisan serve
-```
-
-The seeder creates 3 demo plans (Starter, Professional, Enterprise) with pricing in USD, AED, and EGP for both monthly and yearly billing cycles.
+- **[Docker Setup](DOCKER_SETUP.md)** — Recommended (no manual PHP/MySQL installation needed)
+- **[Local Setup](LOCAL_SETUP.md)** — Using XAMPP, MAMP, or any local PHP environment
 
 ---
-
-## Docker Deployment
-
-### Quick Start
-
-```bash
-# Start all services (app, database, redis, worker, scheduler)
-docker-compose up -d
-
-# Run migrations
-docker-compose exec app php artisan migrate --force
-
-# Seed demo data
-docker-compose exec app php artisan db:seed
-
-# Access the application
-open http://localhost:8000
-```
-
-### Services
-
-| Service | Description | Port |
-|---------|-------------|------|
-| **app** | Main application (PHP-FPM + Nginx) | 8000 |
-| **db** | MySQL 8.0 database | 3306 |
-| **redis** | Redis for cache/sessions | 6379 |
-| **worker** | Queue worker for background jobs | — |
-| **scheduler** | Laravel scheduler for automated tasks | — |
-| **phpmyadmin** | Database management (dev only) | 8080 |
-
-### Environment Variables
-
-```env
-APP_PORT=8000
-DB_PORT=3306
-REDIS_PORT=6379
-PMA_PORT=8080
-```
-
 ---
 
 ## Configuration
