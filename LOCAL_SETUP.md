@@ -8,31 +8,37 @@ Setup the project on your local machine using XAMPP, MAMP, Laragon, or any local
 - Composer
 - MySQL
 
-## Quick Start
+---
 
-### 1. Clone the Repository
+## Step-by-Step Setup
+
+### Step 1: Clone the Repository
 
 ```bash
 git clone <repository-url>
 cd subscription-engine
 ```
 
-### 2. Install Dependencies
+### Step 2: Install Dependencies
 
 ```bash
 composer install
 ```
 
-### 3. Configure Environment
+This installs all PHP packages defined in `composer.json`.
+
+### Step 3: Configure Environment
 
 ```bash
 cp .env.example .env
 php artisan key:generate
 ```
 
-### 4. Configure Database
+This creates the `.env` file from the example template and generates a unique application key.
 
-Edit the `.env` file and set your database credentials:
+### Step 4: Configure Database
+
+Open the `.env` file and set your database credentials:
 
 ```env
 DB_CONNECTION=mysql
@@ -40,24 +46,51 @@ DB_HOST=127.0.0.1
 DB_PORT=3306
 DB_DATABASE=subscription_engine
 DB_USERNAME=root
-DB_PASSWORD=
+DB_PASSWORD=your_password_here
 ```
 
-### 5. Create Database
+| Variable | Description |
+|----------|-------------|
+| `DB_CONNECTION` | Database driver (mysql) |
+| `DB_HOST` | Database host (usually 127.0.0.1) |
+| `DB_PORT` | Database port (3306 for MySQL) |
+| `DB_DATABASE` | Your database name |
+| `DB_USERNAME` | Database username |
+| `DB_PASSWORD` | Database password |
+
+### Step 5: Create Database
+
+Create the database using MySQL:
 
 ```bash
 mysql -u root -p -e "CREATE DATABASE subscription_engine;"
 ```
 
-Or create it via phpMyAdmin.
+Or create it manually via **phpMyAdmin**:
+1. Open http://localhost/phpmyadmin
+2. Click **"New"** in the left sidebar
+3. Enter database name: `subscription_engine`
+4. Click **"Create"**
 
-### 6. Run Migrations & Seed Data
+### Step 6: Run Migrations & Seed Data
 
 ```bash
 php artisan migrate --seed
 ```
 
-### 7. Start the Server
+This command:
+- Creates all database tables (users, plans, plan_prices, subscriptions, subscription_audit_logs)
+- Seeds 3 demo plans (Starter, Professional, Enterprise) with pricing in USD, AED, and EGP
+- Creates a test user for authenticated endpoint testing
+
+**After seeding, you will see test credentials in the console:**
+
+| Field | Value |
+|-------|-------|
+| **Email** | `test@example.com` |
+| **Password** | `TestPass123` |
+
+### Step 7: Start the Server
 
 ```bash
 php artisan serve
@@ -67,14 +100,35 @@ Open: http://localhost:8000
 
 ---
 
-## Test Credentials
+## Test the API
 
-After seeding, you can test authenticated endpoints with:
+### 1. Login to Get Token
 
-| Field | Value |
-|-------|-------|
-| **Email** | `test@example.com` |
-| **Password** | `TestPass123` |
+```bash
+curl -X POST http://localhost:8000/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","password":"TestPass123"}'
+```
+
+Response:
+```json
+{
+  "status": "success",
+  "message": "Login successful.",
+  "data": {
+    "user": { "id": 1, "name": "Test User", "email": "test@example.com" },
+    "token": "1|abc123...",
+    "token_type": "Bearer"
+  }
+}
+```
+
+### 2. Use Token to Access Protected Routes
+
+```bash
+curl http://localhost:8000/api/v1/subscriptions \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE"
+```
 
 ---
 
@@ -115,13 +169,13 @@ php artisan queue:work
 
 ---
 
-## XAMPP Setup (Windows/Linux)
+## Environment-Specific Setup
 
-1. Start Apache and MySQL from XAMPP Control Panel
-2. Create database via phpMyAdmin:
-   - Open http://localhost/phpmyadmin
-   - Click "New" → Database name: `subscription_engine` → Create
-3. Update `.env` with your database credentials:
+### XAMPP (Windows/Linux)
+
+1. Start **Apache** and **MySQL** from XAMPP Control Panel
+2. Create database via phpMyAdmin: http://localhost/phpmyadmin
+3. Update `.env`:
 
 ```env
 DB_CONNECTION=mysql
@@ -132,26 +186,13 @@ DB_USERNAME=root
 DB_PASSWORD=
 ```
 
-4. Run migrations:
+4. Run: `php artisan migrate --seed`
+5. Start: `php artisan serve`
 
-```bash
-php artisan migrate --seed
-```
-
-5. Start server:
-
-```bash
-php artisan serve
-```
-
----
-
-## MAMP Setup (macOS)
+### MAMP (macOS)
 
 1. Start MAMP servers
-2. Create database via phpMyAdmin:
-   - Open http://localhost:8888/phpMyAdmin
-   - Click "New" → Database name: `subscription_engine` → Create
+2. Create database via phpMyAdmin: http://localhost:8888/phpMyAdmin
 3. Update `.env`:
 
 ```env
@@ -162,21 +203,10 @@ DB_USERNAME=root
 DB_PASSWORD=root
 ```
 
-4. Run migrations:
+4. Run: `php artisan migrate --seed`
+5. Start: `php artisan serve`
 
-```bash
-php artisan migrate --seed
-```
-
-5. Start server:
-
-```bash
-php artisan serve
-```
-
----
-
-## Laragon Setup (Windows)
+### Laragon (Windows)
 
 1. Start Laragon
 2. Open Terminal → Create database:
@@ -196,17 +226,8 @@ DB_USERNAME=root
 DB_PASSWORD=
 ```
 
-4. Run setup:
-
-```bash
-composer setup
-```
-
-5. Start server:
-
-```bash
-php artisan serve
-```
+4. Run: `composer setup` (Laragon supports this shortcut)
+5. Start: `php artisan serve`
 
 ---
 
@@ -214,13 +235,11 @@ php artisan serve
 
 ### PHP Version Error
 
-Check your PHP version:
-
 ```bash
 php -v
 ```
 
-Must be **PHP 8.3+**. If not, upgrade or use a tool like [Laragon](https://laragon.org/) or [Herd](https://herd.laravel.com/).
+Must be **PHP 8.3+**. If not, upgrade or use [Laragon](https://laragon.org/) or [Herd](https://herd.laravel.com/).
 
 ### Composer Not Found
 
@@ -228,9 +247,9 @@ Install Composer: https://getcomposer.org/download/
 
 ### Database Connection Refused
 
-- Make sure MySQL/MariaDB is running
+- Make sure MySQL is running
 - Check credentials in `.env`
-- Try connecting manually via MySQL client or phpMyAdmin
+- Test connection: `mysql -u root -p`
 
 ### Permission Denied (Linux/Mac)
 
