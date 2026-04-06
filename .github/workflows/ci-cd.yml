@@ -10,7 +10,7 @@ env:
   APP_NAME: "Subscription Engine"
   APP_ENV: testing
   APP_DEBUG: true
-  APP_KEY: base64:wp+z+gBCMqVDOOC4gcc/MLdaRm4oTMeAPT0goJ4hDDM=
+  APP_KEY: ${{ secrets.APP_KEY }}
   DB_CONNECTION: sqlite
   DB_DATABASE: ":memory:"
   CACHE_DRIVER: array
